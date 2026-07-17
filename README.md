@@ -6,7 +6,7 @@ Scoop bucket for distributing npm packages as Scoop manifests, with a shared Nod
 
 ## Design
 
-Each npm package is installed as a Scoop app. Instead of bundling Node.js, manifests depend on Scoop's `nodejs` (from the [versions](https://github.com/ScoopInstaller/Versions) bucket) and hardcode the path to a specific Node.js version in a generated `.cmd` shim.
+Each npm package is installed as a Scoop app. Instead of bundling Node.js, manifests depend on a Scoop-managed Node.js runtime (from the [versions](https://github.com/ScoopInstaller/Versions) bucket) and generate a `.cmd` shim that points to `node.exe` through Scoop's `current` symlink.
 
 ### Directory layout
 
@@ -14,29 +14,29 @@ Each npm package is installed as a Scoop app. Instead of bundling Node.js, manif
 scoop/apps/
 ├── nodejs20/                    # Scoop-managed Node.js (via versions bucket)
 │   ├── 20.20.2/
-│   └── current → 20.20.2
+│   ├── 20.20.3/                 # after update
+│   └── current → 20.20.3
 ├── devcontainer/
 │   └── 0.87.0/
 │       ├── package/             # extract_dir: "package" (from npm tgz)
-│       └── devcontainer.cmd      # generated shim → hardcoded path to node.exe
+│       └── devcontainer.cmd      # generated shim → node.exe via current
 └── ...
 ```
 
 ### Shim strategy
 
-Shims hardcode the version-specific path to `node.exe` (not the `current` symlink):
+Shims use the `current` symlink, not a hardcoded patch version:
 
 ```cmd
-@"%~dp0..\\..\\nodejs20\\20.20.2\\node.exe" "%~dp0package\\devcontainer.js" %*
+@"%~dp0..\\..\\nodejs20\\current\\node.exe" "%~dp0package\\devcontainer.js" %*
 ```
 
-This means each npm package can point at a different Node major version. Different packages can depend on `nodejs18`, `nodejs20`, `nodejs22`, etc.
+This has two advantages:
 
-### ⚠️ Important: Node.js version cleanup
+1. **Survives `scoop update`**: When Node.js updates (e.g. `20.20.2` → `20.20.3`), Scoop repoints `current` and the shim follows automatically — no reinstall needed.
+2. **Survives `scoop cleanup`**: Cleanup only removes old version directories; `current` and the latest version are untouched.
 
-`scoop cleanup nodejs20` removes old versions. If a shim hardcodes `20.20.2` and you run cleanup after an update to `20.20.3`, the shim breaks.
-
-**Do not run `scoop cleanup` on Node.js manifests used by this bucket.** Reinstall the npm package if you need to update the shim's Node path.
+Each npm package can point at a different Node major version. Different packages can depend on `nodejs18`, `nodejs20`, `nodejs22`, etc. The only failure case is uninstalling the Node.js dependency entirely.
 
 ## Setup
 
@@ -62,7 +62,7 @@ Add a new npm package:
 1. Create `<package>.json` in `bucket/`
 2. Use `depends` to specify the Node.js version from the `versions` bucket
 3. `extract_dir: "package"` — npm tgz files have their content under `package/`
-4. `pre_install` generates a `.cmd` shim that hardcodes the path to `node.exe`
+4. `pre_install` generates a `.cmd` shim that points to `node.exe` via the `current` symlink
 5. `checkver` + `autoupdate` should track the npm registry
 
 See `bucket/devcontainer.json` for a reference implementation.
