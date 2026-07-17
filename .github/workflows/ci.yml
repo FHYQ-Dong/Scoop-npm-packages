@@ -79,15 +79,15 @@ jobs:
           $apps = '${{ steps.changed.outputs.apps }}' -split ' ' | Where-Object { $_ }
           $failed = $false
           foreach ($app in $apps) {
-            Write-Host "`n=== $app: checkhashes ==="
+            Write-Host "`n=== ${app}: checkhashes ==="
             & "$env:SCOOP_HOME/bin/checkhashes.ps1" -Dir $dir -App $app
             if ($LASTEXITCODE -ne 0) { $failed = $true }
 
-            Write-Host "`n=== $app: checkurls ==="
+            Write-Host "`n=== ${app}: checkurls ==="
             & "$env:SCOOP_HOME/bin/checkurls.ps1" -Dir $dir -App $app
             if ($LASTEXITCODE -ne 0) { $failed = $true }
 
-            Write-Host "`n=== $app: checkver ==="
+            Write-Host "`n=== ${app}: checkver ==="
             & "$env:SCOOP_HOME/bin/checkver.ps1" -Dir $dir $app
             if ($LASTEXITCODE -ne 0) { $failed = $true }
           }
