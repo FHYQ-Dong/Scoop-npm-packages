@@ -52,11 +52,11 @@ jobs:
         with:
           fetch-depth: 0
           path: 'my_bucket'
-      - name: Checkout Scoop
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          repository: ScoopInstaller/Scoop
-          path: 'scoop_core'
+      - name: Install Scoop
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          irm get.scoop.sh | iex
+          "$env:USERPROFILE\scoop\shims" >> $env:GITHUB_PATH
       - name: Find changed manifests
         id: changed
         run: |
@@ -74,7 +74,7 @@ jobs:
       - name: Check hashes, URLs, and versions
         if: steps.changed.outputs.count != '0'
         run: |
-          $env:SCOOP_HOME = Convert-Path '.\scoop_core'
+          $env:SCOOP_HOME = "$env:USERPROFILE\scoop\apps\scoop\current"
           $dir = Convert-Path '.\my_bucket\bucket'
           $apps = '${{ steps.changed.outputs.apps }}' -split ' ' | Where-Object { $_ }
           $failed = $false
