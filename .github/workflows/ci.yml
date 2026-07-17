@@ -56,6 +56,7 @@ jobs:
         run: |
           Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
           irm get.scoop.sh | iex
+          New-Item -ItemType Directory -Force "$env:USERPROFILE\scoop\cache" | Out-Null
           "$env:USERPROFILE\scoop\shims" >> $env:GITHUB_PATH
       - name: Find changed manifests
         id: changed
