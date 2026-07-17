@@ -39,3 +39,56 @@ jobs:
         run: |
           $env:SCOOP_HOME="$(Convert-Path '.\scoop_core')"
           .\my_bucket\bin\test.ps1
+
+  check-manifests:
+    name: Check changed manifests
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout Bucket
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          path: 'my_bucket'
+      - name: Checkout Scoop
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ScoopInstaller/Scoop
+          path: 'scoop_core'
+      - name: Find changed manifests
+        id: changed
+        run: |
+          if ('${{ github.event_name }}' -eq 'pull_request') {
+            $diff = git -C my_bucket diff --name-only 'origin/${{ github.base_ref }}...HEAD' -- 'bucket/*.json'
+          } elseif ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $diff = Get-ChildItem my_bucket/bucket/*.json | ForEach-Object { "bucket/$($_.Name)" }
+          } else {
+            $diff = git -C my_bucket diff --name-only HEAD^ HEAD -- 'bucket/*.json'
+          }
+          $apps = @($diff | Where-Object { $_ } | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension((Split-Path $_ -Leaf)) })
+          "apps=$($apps -join ' ')" >> $env:GITHUB_OUTPUT
+          "count=$($apps.Count)" >> $env:GITHUB_OUTPUT
+          Write-Host "Changed manifests: $($apps -join ', ')"
+      - name: Check hashes, URLs, and versions
+        if: steps.changed.outputs.count != '0'
+        run: |
+          $env:SCOOP_HOME = Convert-Path '.\scoop_core'
+          $dir = Convert-Path '.\my_bucket\bucket'
+          $apps = '${{ steps.changed.outputs.apps }}' -split ' ' | Where-Object { $_ }
+          $failed = $false
+          foreach ($app in $apps) {
+            Write-Host "`n=== $app: checkhashes ==="
+            & "$env:SCOOP_HOME/bin/checkhashes.ps1" -Dir $dir -App $app
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+
+            Write-Host "`n=== $app: checkurls ==="
+            & "$env:SCOOP_HOME/bin/checkurls.ps1" -Dir $dir -App $app
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+
+            Write-Host "`n=== $app: checkver ==="
+            & "$env:SCOOP_HOME/bin/checkver.ps1" -Dir $dir $app
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+          }
+          if ($failed) { exit 1 }
