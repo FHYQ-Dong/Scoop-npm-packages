@@ -1,0 +1,7 @@
+*~
+._*
+/checkver*
+.idea
+*.iml
+.vscode
+.claude/settings.local.json
