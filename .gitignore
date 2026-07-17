@@ -5,3 +5,7 @@
 *.iml
 .vscode
 .claude/settings.local.json
+
+# AI agent files
+CLAUDE.md
+.claude/**
