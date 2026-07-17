@@ -1,0 +1,29 @@
+{
+    "version": "1.5.19",
+    "description": "The open agent skills ecosystem",
+    "homepage": "https://www.npmjs.com/package/skills",
+    "license": "MIT",
+    "depends": "versions/nodejs22",
+    "url": "https://registry.npmjs.org/skills/-/skills-1.5.19.tgz",
+    "hash": "sha512:491d3971b364f91d7b19f68216ff781e5ab91170e95026c6d192fdf84622e54107cd43c0025fa496cd8bc424feebbc005a53806a7530cd97a421542fa429a9e7",
+    "extract_dir": "package",
+    "pre_install": [
+        "Push-Location $dir; & \"$(Split-Path (Split-Path $dir -Parent) -Parent)\\nodejs22\\current\\npm.cmd\" install --production --no-audit --no-fund 2>&1 | Out-Null; Pop-Location",
+        "\"@`\"%~dp0..\\..\\nodejs22\\current\\node.exe`\" `\"%~dp0bin\\cli.mjs`\" %*\" | Out-File -Encoding ascii \"$dir\\skills.cmd\"",
+        "\"@`\"%~dp0..\\..\\nodejs22\\current\\node.exe`\" `\"%~dp0bin\\cli.mjs`\" %*\" | Out-File -Encoding ascii \"$dir\\add-skill.cmd\""
+    ],
+    "bin": [
+        "skills.cmd",
+        "add-skill.cmd"
+    ],
+    "checkver": {
+        "url": "https://registry.npmjs.org/skills/latest",
+        "jsonpath": "$.version"
+    },
+    "autoupdate": {
+        "url": "https://registry.npmjs.org/skills/-/skills-$version.tgz",
+        "hash": {
+            "mode": "download"
+        }
+    }
+}
