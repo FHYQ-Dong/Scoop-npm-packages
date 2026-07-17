@@ -82,14 +82,14 @@ jobs:
           foreach ($app in $apps) {
             Write-Host "`n=== ${app}: checkhashes ==="
             & "$env:SCOOP_HOME/bin/checkhashes.ps1" -Dir $dir -App $app
-            if ($LASTEXITCODE -ne 0) { $failed = $true }
+            if (-not $?) { $failed = $true }
 
             Write-Host "`n=== ${app}: checkurls ==="
             & "$env:SCOOP_HOME/bin/checkurls.ps1" -Dir $dir -App $app
-            if ($LASTEXITCODE -ne 0) { $failed = $true }
+            if (-not $?) { $failed = $true }
 
             Write-Host "`n=== ${app}: checkver ==="
             & "$env:SCOOP_HOME/bin/checkver.ps1" -Dir $dir $app
-            if ($LASTEXITCODE -ne 0) { $failed = $true }
+            if (-not $?) { $failed = $true }
           }
           if ($failed) { exit 1 }
